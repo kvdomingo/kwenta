@@ -1,0 +1,57 @@
+networks:
+  gateway:
+    external: true
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    image: kvdomingo/kwenta-api:latest
+    env_file: .env
+    volumes:
+      - .:/backend
+    depends_on:
+      - postgres
+
+  frontend:
+    image: node:16-alpine
+    environment:
+      - NODE_ENV=development
+    entrypoint:
+      - /bin/sh
+      - "-c"
+      - "yarn install && exec yarn dev --host 0.0.0.0 --port 3000"
+    working_dir: /web
+    volumes:
+      - ./web/static/web:/web
+
+  proxy:
+    image: bitnami/nginx:1.21.6
+    environment:
+      - NGINX_HTTP_PORT_NUMBER=${HTTP_PORT}
+    volumes:
+      - ./proxy:/opt/bitnami/nginx/conf/server_blocks:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kwenta.rule=Host(`kwenta.localhost`)"
+      - "traefik.http.routers.kwenta.entrypoints=http"
+      - "traefik.docker.network=gateway"
+      - "traefik.http.services.kwenta.loadbalancer.server.port=${HTTP_PORT}"
+    restart: unless-stopped
+    networks:
+      - default
+      - gateway
+
+  postgres:
+    image: bitnami/postgresql:13
+    environment:
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+      - POSTGRESQL_PORT=5432
+    volumes:
+      - db-data:/bitnami/postgresql
+
+volumes:
+  db-data:
