@@ -15,6 +15,7 @@ django-cors-headers = "^3.13.0"
 whitenoise = "^6.2.0"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
 dj-database-url = "^1.0.0"
+django-filter = "^22.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["d"], version = "^22.10.0"}
